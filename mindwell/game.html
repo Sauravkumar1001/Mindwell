@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindWell - Mood Booster Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Configure Tailwind dark mode
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    <style>
+        /* Card flip animation */
+        .memory-card {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+        
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+        }
+        
+        .card-front {
+            background: linear-gradient(135deg, #0d9488, #3b82f6);
+            transform: rotateY(180deg);
+        }
+        
+        .card-back {
+            background: #1e293b url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z" fill="%233b82f6" fill-opacity="0.1" fill-rule="evenodd"/%3E%3C/svg%3E');
+        }
+        
+        /* Confetti animation */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f59e0b;
+            opacity: 0;
+            animation: confetti-fall 4s ease-in-out;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Dark mode classes */
+        html.dark {
+            color-scheme: dark;
+        }
+        
+        html {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .dark body {
+            background-color: #111827; /* bg-gray-900 */
+            color: #f3f4f6; /* text-gray-100 */
+        }
+        
+        .dark .bg-white {
+            background-color: #1f2937; /* bg-gray-800 */
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #374151; /* bg-gray-700 */
+        }
+        
+        .dark .text-gray-800 {
+            color: #f3f4f6; /* text-gray-100 */
+        }
+        
+        .dark .text-gray-600 {
+            color: #d1d5db; /* text-gray-300 */
+        }
+        
+        .dark .border-gray-200 {
+            border-color: #374151; /* border-gray-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Navigation Bar -->
+    <nav class="bg-teal-600 text-white shadow-lg fixed top-0 w-full z-50">
+        <div class="container px-4 mx-auto py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-brain text-2xl"></i>
+                    <span class="font-bold text-xl">MindWell</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="index.html" class="hover:text-teal-200 transition duration-300">Home</a>
+                    <a href="courses.html" class="hover:text-teal-200 transition duration-300">Courses</a>
+                    <a href="index.html#about" class="hover:text-teal-200 transition duration-300">About</a>
+                    <a href="index.html#assessment" class="hover:text-teal-200 transition duration-300">Assessment</a>
+                    <a href="index.html#resources" class="hover:text-teal-200 transition duration-300">Resources</a>
+                    <a href="index.html#contact" class="hover:text-teal-200 transition duration-300">Contact</a>
+                    <button id="theme-toggle" class="focus:outline-none">
+                        <i id="theme-toggle-dark-icon" class="fas fa-moon text-xl hidden"></i>
+                        <i id="theme-toggle-light-icon" class="fas fa-sun text-xl"></i>
+                    </button>
+                </div>
+                <div class="md:hidden">
+                    <button id="menu-toggle" class="focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-teal-700 pb-4">
+            <div class="container mx-auto px-4 flex flex-col space-y-3">
+                <a href="index.html" class="block py-2 hover:text-teal-200 transition duration-300">Home</a>
+                <a href="courses.html" class="block py-2 hover:text-teal-200 transition duration-300">Courses</a>
+                <a href="index.html#about" class="block py-2 hover:text-teal-200 transition duration-300">About</a>
+                <a href="index.html#assessment" class="block py-2 hover:text-teal-200 transition duration-300">Assessment</a>
+                <a href="index.html#resources" class="block py-2 hover:text-teal-200 transition duration-300">Resources</a>
+                <a href="index.html#contact" class="block py-2 hover:text-teal-200 transition duration-300">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Game Section -->
+    <section class="py-24 bg-gradient-to-b from-teal-500 to-blue-500">
+        <div class="container mx-auto px-4 pt-8">
+            <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="p-8">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">Mindful Memory Match</h2>
+                    <p class="text-center text-gray-600 mb-8">Match pairs of positive mental health concepts to boost your mood and mindfulness.</p>
+                    
+                    <!-- Game Controls -->
+                    <div class="flex flex-wrap justify-between items-center mb-8">
+                        <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                            <div class="bg-teal-50 p-3 rounded-lg">
+                                <span class="text-teal-800 font-medium">Time: <span id="timer">60</span>s</span>
+                            </div>
+                            <div class="bg-blue-50 p-3 rounded-lg">
+                                <span class="text-blue-800 font-medium">Moves: <span id="moves">0</span></span>
+                            </div>
+                            <div class="bg-purple-50 p-3 rounded-lg">
+                                <span class="text-purple-800 font-medium">Score: <span id="score">0</span></span>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="start-btn" class="bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-300">
+                                <i class="fas fa-play mr-1"></i> Start
+                            </button>
+                            <button id="restart-btn" class="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300">
+                                <i class="fas fa-redo mr-1"></i> Restart
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Game Board -->
+                    <div id="game-board" class="grid grid-cols-4 gap-3 mb-8">
+                        <!-- Cards will be generated by JavaScript -->
+                    </div>
+                    
+                    <!-- Game Messages -->
+                    <div id="game-message" class="text-center p-4 rounded-lg mb-8 hidden"></div>
+                    
+                    <!-- High Scores -->
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">High Scores</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Left</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moves</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="high-scores" class="divide-y divide-gray-200">
+                                    <!-- High scores will be added here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Mental Health Tips -->
+                    <div class="mt-8 bg-gray-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Mental Health Benefits of Memory Games</h3>
+                        <ul class="space-y-2 text-gray-600">
+                            <li><i class="fas fa-brain text-teal-500 mr-2"></i> Improves cognitive function and memory</li>
+                            <li><i class="fas fa-heart text-teal-500 mr-2"></i> Reduces stress and anxiety</li>
+                            <li><i class="fas fa-lightbulb text-teal-500 mr-2"></i> Enhances focus and concentration</li>
+                            <li><i class="fas fa-smile text-teal-500 mr-2"></i> Provides a sense of accomplishment</li>
+                            <li><i class="fas fa-bolt text-teal-500 mr-2"></i> Boosts mood through positive reinforcement</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fas fa-brain text-2xl text-teal-400"></i>
+                        <span class="font-bold text-xl">MindWell</span>
+                    </div>
+                    <p class="text-gray-400 max-w-md">Empowering individuals to identify mental health concerns and access support for improved well-being.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4 text-teal-400">Navigation</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="index.html" class="hover:text-teal-400 transition duration-300">Home</a></li>
+                            <li><a href="index.html#about" class="hover:text-teal-400 transition duration-300">About</a></li>
+                            <li><a href="index.html#assessment" class="hover:text-teal-400 transition duration-300">Assessment</a></li>
+                            <li><a href="index.html#resources" class="hover:text-teal-400 transition duration-300">Resources</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4 text-teal-400">Resources</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="#" class="hover:text-teal-400 transition duration-300">Self-Help Articles</a></li>
+                            <li><a href="#" class="hover:text-teal-400 transition duration-300">Find a Therapist</a></li>
+                            <li><a href="#" class="hover:text-teal-400 transition duration-300">Crisis Support</a></li>
+                            <li><a href="#" class="hover:text-teal-400 transition duration-300">FAQ</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-gray-700 text-center text-gray-400 text-sm">
+                <p>© 2025 MindWell. All rights reserved. This site is for educational purposes only and does not provide medical advice.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const gameBoard = document.getElementById('game-board');
+            const startBtn = document.getElementById('start-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const timerElement = document.getElementById('timer');
+            const movesElement = document.getElementById('moves');
+            const scoreElement = document.getElementById('score');
+            const gameMessage = document.getElementById('game-message');
+            const highScoresTable = document.getElementById('high-scores');
+            const menuToggle = document.getElementById('menu-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            // Game variables
+            let cards = [];
+            let hasFlippedCard = false;
+            let lockBoard = true;
+            let firstCard, secondCard;
+            let moves = 0;
+            let score = 0;
+            let matches = 0;
+            let timer;
+            let timeLeft = 60;
+            let gameStarted = false;
+
+            // Card data - mental health positive concepts with icons
+            const cardData = [
+                { name: 'mindfulness', icon: 'fa-solid fa-spa', color: 'text-teal-500' },
+                { name: 'gratitude', icon: 'fa-solid fa-heart', color: 'text-red-500' },
+                { name: 'resilience', icon: 'fa-solid fa-shield-alt', color: 'text-blue-500' },
+                { name: 'joy', icon: 'fa-solid fa-face-smile-beam', color: 'text-yellow-500' },
+                { name: 'growth', icon: 'fa-solid fa-seedling', color: 'text-green-500' },
+                { name: 'balance', icon: 'fa-solid fa-balance-scale', color: 'text-purple-500' },
+                { name: 'calm', icon: 'fa-solid fa-water', color: 'text-cyan-500' },
+                { name: 'strength', icon: 'fa-solid fa-dumbbell', color: 'text-indigo-500' }
+            ];
+
+            // Mobile menu toggle
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Theme toggle functionality
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+            // Check for saved theme preference
+            const userTheme = localStorage.getItem('theme');
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+            // Set initial theme
+            if (userTheme === 'dark' || (!userTheme && systemTheme === 'dark')) {
+                document.documentElement.classList.add('dark');
+                darkIcon.classList.remove('hidden');
+                lightIcon.classList.add('hidden');
+            }
+
+            // Toggle theme when button is clicked
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', function() {
+                    // Check current theme
+                    const isDarkMode = document.documentElement.classList.contains('dark');
+
+                    // Toggle theme
+                    if (isDarkMode) {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('theme', 'light');
+                        darkIcon.classList.add('hidden');
+                        lightIcon.classList.remove('hidden');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('theme', 'dark');
+                        darkIcon.classList.remove('hidden');
+                        lightIcon.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Initialize game
+            function init() {
+                loadHighScores();
+                setupEventListeners();
+            }
+
+            // Set up event listeners
+            function setupEventListeners() {
+                startBtn.addEventListener('click', startGame);
+                restartBtn.addEventListener('click', restartGame);
+            }
+
+            // Start the game
+            function startGame() {
+                if (gameStarted) return;
+
+                gameStarted = true;
+                lockBoard = false;
+                timeLeft = 60;
+                moves = 0;
+                score = 0;
+                matches = 0;
+
+                updateUI();
+                createGameBoard();
+                startTimer();
+
+                gameMessage.classList.add('hidden');
+                startBtn.disabled = true;
+                startBtn.classList.add('opacity-50');
+            }
+
+            // Create the game board
+            function createGameBoard() {
+                // Clear the board
+                gameBoard.innerHTML = '';
+
+                // Create pairs of cards
+                let cardPairs = [...cardData, ...cardData];
+
+                // Shuffle the cards
+                cardPairs = shuffleArray(cardPairs);
+
+                // Create card elements
+                cardPairs.forEach((card, index) => {
+                    const cardElement = document.createElement('div');
+                    cardElement.classList.add('memory-card', 'h-24', 'rounded-lg', 'shadow-md');
+                    cardElement.dataset.name = card.name;
+
+                    cardElement.innerHTML = `
+                        <div class="card-front flex flex-col items-center justify-center">
+                            <i class="${card.icon} ${card.color} text-2xl mb-2"></i>
+                            <span class="text-white text-sm font-medium capitalize">${card.name}</span>
+                        </div>
+                        <div class="card-back">
+                            <i class="fas fa-brain text-2xl text-blue-500"></i>
+                        </div>
+                    `;
+
+                    cardElement.addEventListener('click', flipCard);
+                    gameBoard.appendChild(cardElement);
+                });
+
+                // Store all cards in the cards array
+                cards = document.querySelectorAll('.memory-card');
+            }
+
+            // Flip a card
+            function flipCard() {
+                if (lockBoard) return;
+                if (this === firstCard) return;
+
+                this.classList.add('flipped');
+
+                if (!hasFlippedCard) {
+                    // First card flipped
+                    hasFlippedCard = true;
+                    firstCard = this;
+                    return;
+                }
+
+                // Second card flipped
+                secondCard = this;
+                moves++;
+                updateUI();
+
+                checkForMatch();
+            }
+
+            // Check if the two flipped cards match
+            function checkForMatch() {
+                const isMatch = firstCard.dataset.name === secondCard.dataset.name;
+
+                if (isMatch) {
+                    disableCards();
+                    updateScore(10);
+                    matches++;
+
+                    // Check if all matches are found
+                    if (matches === cardData.length) {
+                        gameWon();
+                    }
+                } else {
+                    unflipCards();
+                    updateScore(-2);
+                }
+            }
+
+            // Disable matched cards
+            function disableCards() {
+                firstCard.removeEventListener('click', flipCard);
+                secondCard.removeEventListener('click', flipCard);
+
+                // Add a subtle animation to matched cards
+                firstCard.classList.add('opacity-75');
+                secondCard.classList.add('opacity-75');
+
+                resetBoard();
+            }
+
+            // Unflip cards that don't match
+            function unflipCards() {
+                lockBoard = true;
+
+                setTimeout(() => {
+                    firstCard.classList.remove('flipped');
+                    secondCard.classList.remove('flipped');
+
+                    resetBoard();
+                }, 1000);
+            }
+
+            // Reset the board after each turn
+            function resetBoard() {
+                [hasFlippedCard, lockBoard] = [false, false];
+                [firstCard, secondCard] = [null, null];
+            }
+
+            // Update the score
+            function updateScore(points) {
+                score += points;
+                if (score < 0) score = 0;
+                updateUI();
+            }
+
+            // Update UI elements
+            function updateUI() {
+                movesElement.textContent = moves;
+                scoreElement.textContent = score;
+                timerElement.textContent = timeLeft;
+            }
+
+            // Start the game timer
+            function startTimer() {
+                clearInterval(timer);
+                timer = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+
+                    if (timeLeft <= 10) {
+                        timerElement.parentElement.classList.add('text-red-600');
+                    }
+
+                    if (timeLeft <= 0) {
+                        gameOver();
+                    }
+                }, 1000);
+            }
+
+            // Game over
+            function gameOver() {
+                clearInterval(timer);
+                lockBoard = true;
+                gameStarted = false;
+
+                // Show game over message
+                gameMessage.textContent = "Time's up! Try again to beat your score.";
+                gameMessage.classList.remove('hidden', 'bg-green-100', 'text-green-800');
+                gameMessage.classList.add('bg-red-100', 'text-red-800');
+
+                // Enable start button
+                startBtn.disabled = false;
+                startBtn.classList.remove('opacity-50');
+
+                // Save score if it's high enough
+                saveScore();
+            }
+
+            // Game won
+            function gameWon() {
+                clearInterval(timer);
+                lockBoard = true;
+                gameStarted = false;
+
+                // Final score calculation: base score + time bonus + move efficiency
+                const timeBonus = timeLeft * 5;
+                const moveEfficiency = Math.max(0, 100 - (moves - cardData.length) * 5);
+                const finalScore = score + timeBonus + moveEfficiency;
+
+                // Update score
+                score = finalScore;
+                updateUI();
+
+                // Show win message
+                gameMessage.textContent = `Congratulations! You won with a score of ${score}!`;
+                gameMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800');
+                gameMessage.classList.add('bg-green-100', 'text-green-800');
+
+                // Enable start button
+                startBtn.disabled = false;
+                startBtn.classList.remove('opacity-50');
+
+                // Create confetti effect
+                createConfetti();
+
+                // Save score
+                saveScore();
+            }
+
+            // Restart the game
+            function restartGame() {
+                clearInterval(timer);
+                gameStarted = false;
+
+                // Enable start button
+                startBtn.disabled = false;
+                startBtn.classList.remove('opacity-50');
+
+                // Hide game message
+                gameMessage.classList.add('hidden');
+
+                // Reset timer styling
+                timerElement.parentElement.classList.remove('text-red-600');
+
+                // Start a new game
+                startGame();
+            }
+
+            // Create confetti effect for winning
+            function createConfetti() {
+                const colors = ['#0d9488', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'];
+
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti');
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+
+                    document.body.appendChild(confetti);
+
+                    // Remove confetti after animation
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 4000);
+                }
+            }
+
+            // Save score to local storage
+            function saveScore() {
+                if (score <= 0) return;
+
+                const highScores = JSON.parse(localStorage.getItem('mindWellMemoryGameScores')) || [];
+
+                // Add new score
+                highScores.push({
+                    date: new Date().toLocaleDateString(),
+                    score: score,
+                    timeLeft: timeLeft,
+                    moves: moves
+                });
+
+                // Sort high scores by score (descending)
+                highScores.sort((a, b) => b.score - a.score);
+
+                // Keep only the top 10 high scores
+                const topHighScores = highScores.slice(0, 10);
+
+                // Save updated high scores to local storage
+                localStorage.setItem('mindWellMemoryGameScores', JSON.stringify(topHighScores));
+
+                // Update the displayed high scores
+                loadHighScores();
+            }
+
+            // Load high scores from local storage and display them
+            function loadHighScores() {
+                const highScores = JSON.parse(localStorage.getItem('mindWellMemoryGameScores')) || [];
+
+                // Clear the current high scores table
+                highScoresTable.innerHTML = '';
+
+                if (highScores.length === 0) {
+                    const row = highScoresTable.insertRow();
+                    const cell = row.insertCell();
+                    cell.textContent = 'No high scores yet!';
+                    cell.colSpan = 4;
+                    cell.classList.add('text-center', 'py-2');
+                    return;
+                }
+
+                // Create table header
+                const headerRow = highScoresTable.insertRow();
+                const headers = ['Date', 'Score', 'Time Left', 'Moves'];
+                headers.forEach(headerText => {
+                    const th = document.createElement('th');
+                    th.textContent = headerText;
+                    th.classList.add('text-left', 'font-semibold', 'py-2');
+                    headerRow.appendChild(th);
+                });
+
+                // Populate the table with high scores
+                highScores.forEach(scoreEntry => {
+                    const row = highScoresTable.insertRow();
+                    const dateCell = row.insertCell();
+                    const scoreCell = row.insertCell();
+                    const timeLeftCell = row.insertCell();
+                    const movesCell = row.insertCell();
+
+                    dateCell.textContent = scoreEntry.date;
+                    scoreCell.textContent = scoreEntry.score;
+                    timeLeftCell.textContent = scoreEntry.timeLeft;
+                    movesCell.textContent = scoreEntry.moves;
+
+                    dateCell.classList.add('py-1');
+                    scoreCell.classList.add('py-1');
+                    timeLeftCell.classList.add('py-1');
+                    movesCell.classList.add('py-1');
+                });
+            }
+
+            // Utility function to shuffle an array (Fisher-Yates algorithm)
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // Initialize the game when the DOM is loaded
+            init();
+        });
+    </script>
